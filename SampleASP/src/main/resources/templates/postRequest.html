@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Post Request</title>
+</head>
+<body>
+<script>
+window.onload = function() {
+    document.getElementById("myform").submit();
+}
+</script>
+
+<form id="myform" th:action="${url}" method="Post">
+<input type="hidden" name="txnref" th:value="${txnref}">
+<input type="hidden" name="accept" value="application/xml">
+</form>
+</body>
+</html>
