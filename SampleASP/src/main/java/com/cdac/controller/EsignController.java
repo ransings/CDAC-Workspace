@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.Map;
 
 import org.apache.http.entity.ContentType;
@@ -27,10 +28,16 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
 
+import com.cdac.models.DocSignature;
 import com.cdac.models.EsignResp;
 import com.cdac.models.RequestData;
 import com.cdac.sbeans.StamperGeneration;
 import com.cdac.service.ESignService;
+
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -150,30 +157,28 @@ public class EsignController {
 	
 	@PostMapping("/resurl")
 	@ResponseBody
-	public String getEsignResponse(@RequestBody String response) {
-		System.out.println("------------------------------------------------------------------------");
-		//System.out.println("Sesson id(responseUrl)::"+session.getId());
-		System.out.println("------------------------------------------------------------------------");
-		System.out.println("response:\n"+response);		
+	public String getEsignResponse(@RequestBody String res) throws JAXBException {
+		JAXBContext context= JAXBContext.newInstance(EsignResp.class);
+		Unmarshaller unmarshaller=context.createUnmarshaller();
+		StringReader reader=new StringReader(res);
+		EsignResp response=(EsignResp) unmarshaller.unmarshal(reader);
 		
+		if (response.getError()==null || response.getError().contains("NA")) {
+			DocSignature dsc=response.getSignatures().getList().get(0);
+			System.out.println("---------Response DSC---------------------------------------------------");
+
+			System.out.println(dsc.getDsc());
+		}
 		return "";
 	}
 
 	@PostMapping("/redurl")
 	public String getEsignResponse1(@RequestBody String response) {
 		System.out.println("---------Response-------------------------------------------------------");
-		System.out.println("response:\n"+response);		
+		System.out.println("Redirect Response:\n"+response);		
 		
 		return "Success";
 	}
 	
-	@GetMapping("/test")
-	@ResponseBody
-	public EsignResp test() {
-		EsignResp resp= new EsignResp("3.0", "66532hjd","success", "rescode", "gdefgjh", "846837","nmsdcm");
-		System.out.println(resp);
-		return resp;
-	}
-
 
 }
