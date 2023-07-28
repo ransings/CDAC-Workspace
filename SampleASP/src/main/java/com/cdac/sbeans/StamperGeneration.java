@@ -85,6 +85,8 @@ public class StamperGeneration {
 		InputStream is = appearance.getRangeStream();
 		requestData.setAppearance(appearance);
 		requestData.setAppearance(appearance);
+		
+		requestData.setServerFile(destFile);
 		session.setAttribute("requestData", requestData);
 
 		String hashOfDoc = DigestUtils.sha256Hex(is);
@@ -93,30 +95,6 @@ public class StamperGeneration {
 
 	}
 
-	/* public String signPdf(HttpSession session) throws Exception { SignedPdf
-	 * signedPdf=(SignedPdf)session.getAttribute("signedPdf"); String response =
-	 * signedPdf.getResponseXml(); int contentEstimated = 8192; String errorCode =
-	 * response.substring(response.indexOf("errCode"), response.indexOf("errMsg"));
-	 * errorCode = errorCode.trim(); if (errorCode.contains("NA")) { String
-	 * pkcsResponse = parseXml(response.trim()); byte[] sigbytes =
-	 * Base64.decodeBase64(pkcsResponse); byte[] paddedSig = new
-	 * byte[contentEstimated]; System.arraycopy(sigbytes, 0, paddedSig, 0,
-	 * sigbytes.length); PdfDictionary dic2 = new PdfDictionary();
-	 * dic2.put(PdfName.CONTENTS, new PdfString(paddedSig).setHexWriting(true));
-	 * appearance.close(dic2); } else { destFile = "Error"; }
-	 * 
-	 * return destFile; } */
 
-	public String parseXml(String esignResponse) throws Exception {
-
-		DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-		InputSource is = new InputSource();
-		is.setCharacterStream(new StringReader(esignResponse));
-
-		Document doc = db.parse(is);
-		NodeList node = doc.getElementsByTagName("DocSignature");
-		String sig = node.item(0).getTextContent();
-		return sig;
-	}
 
 }

@@ -2,9 +2,20 @@
 <html>
 <head>
 <meta charset="ISO-8859-1">
-<title>Redirect page</title>
+<title>File Download</title>
+<script type="text/javascript">
+function submit() {
+    document.getElementById("myform").submit();
+
+}
+</script>
 </head>
 <body>
-
+<div style="margin-top:15%">
+<form action="download" method="post" id="myform">
+<input type="hidden" name="filePath" th:value="${filePath}">
+<center style="font-size=20px;font-weight:bold"><a onclick="submit()" style="color:blue;text-decoration:underline">Click Here</a> to download the Signed file</center>
+</form>
+</div>
 </body>
 </html>

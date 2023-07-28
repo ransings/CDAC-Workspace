@@ -1,11 +1,14 @@
 package com.cdac.controller;
 import java.io.File;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.entity.ContentType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,13 +34,16 @@ import org.w3c.dom.Document;
 import com.cdac.models.DocSignature;
 import com.cdac.models.EsignResp;
 import com.cdac.models.RequestData;
+import com.cdac.models.ResponseAck;
 import com.cdac.sbeans.StamperGeneration;
 import com.cdac.service.ESignService;
+import com.itextpdf.text.pdf.PdfSignatureAppearance;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import jakarta.xml.bind.Unmarshaller;
+import lombok.Getter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -49,7 +55,10 @@ public class EsignController {
 	private ESignService service;
 	@Autowired
 	private StamperGeneration stamperGeneration;
+	@Getter
+	private Map<String,Object> SessionMapper=new HashMap<>();
 	
+
 	
 	@Value("${ip_conf}")
 	private String ip;
@@ -68,6 +77,7 @@ public class EsignController {
 	public String generateRequest(@RequestParam("file") MultipartFile file,@RequestParam("user") String name, 
 			HttpServletRequest request,	Map<String,Object> map) {
 		HttpSession session=request.getSession();
+		session.setMaxInactiveInterval(300);
 	    RequestData requestData;	    
 		String str = "",signedXml="";
 		File file1 = null;
@@ -124,13 +134,9 @@ public class EsignController {
 		}
 		
 		map.put("txnref", requestData.getTxnref());
-		System.out.println(requestData.getTxnref());
 		map.put("url", form_url);
 		
-		System.out.println("------------------------------------------------------------------------");
-		System.out.println("Sesson id::"+session.getId());
-		System.out.println("------------------------------------------------------------------------");
-
+		SessionMapper.put(requestData.getTxn(), session);
 		
 		return "postRequest";
 		
@@ -157,28 +163,59 @@ public class EsignController {
 	
 	@PostMapping("/resurl")
 	@ResponseBody
-	public String getEsignResponse(@RequestBody String res) throws JAXBException {
+	public ResponseAck getEsignResponse(@RequestBody String res) throws Exception {
+		String result="";
 		JAXBContext context= JAXBContext.newInstance(EsignResp.class);
 		Unmarshaller unmarshaller=context.createUnmarshaller();
 		StringReader reader=new StringReader(res);
 		EsignResp response=(EsignResp) unmarshaller.unmarshal(reader);
+		System.out.println("---------Response-------------------------------------------------------");
 		
-		if (response.getError()==null || response.getError().contains("NA")) {
-			DocSignature dsc=response.getSignatures().getList().get(0);
-			System.out.println("---------Response DSC---------------------------------------------------");
-
-			System.out.println(dsc.getDsc());
-		}
-		return "";
+		//signing pdf
+		result=service.signPdf(response, SessionMapper);
+		
+		ResponseAck ack= new ResponseAck();
+		ack.setErrCode(response.getError());
+		ack.setErrMsg("NA");
+		ack.setStatus(response.getStatus());
+		ack.setTs(response.getTs());
+		ack.setTxn(response.getTxn());
+		
+		return ack;
+	}
+	
+	@PostMapping("failure")
+	public String failurePage() {
+		return "failure";
 	}
 
 	@PostMapping("/redurl")
-	public String getEsignResponse1(@RequestBody String response) {
-		System.out.println("---------Response-------------------------------------------------------");
-		System.out.println("Redirect Response:\n"+response);		
+	public String getEsignResponse1(@RequestParam String txnref,Map<String, Object> map) {
+		txnref=new String(Base64.decodeBase64(txnref.getBytes()));
+		String txn=txnref.substring(0,txnref.indexOf("|"));
+		System.out.println("Decoded txnref::"+txnref);
+		System.out.println(txn);
+		
+		HttpSession session=(HttpSession)SessionMapper.get(txn);
+		String filepath=((RequestData)session.getAttribute("requestData")).getServerFile();
+		map.put("filePath", filepath);
 		
 		return "Success";
 	}
 	
+	@PostMapping("/download")
+	public ResponseEntity<Resource> downloadFile(@RequestParam String filePath) throws FileNotFoundException{
+			File file=new File(filePath);  
+		   	Resource fileResource = new FileSystemResource(filePath);
+		    InputStream is=new FileInputStream(file);
+		    InputStreamResource resource=new InputStreamResource(is,null);
+		    
+		   
+		    // Return the file as a response with appropriate headers
+		    return ResponseEntity.ok()
+		            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+file.getName())
+		            .contentType(MediaType.APPLICATION_PDF)
+		            .body(resource);  
+	}
 
 }

@@ -11,6 +11,8 @@ public class RequestData {
 	private String hash;
 	private String txnref;
 	private PdfSignatureAppearance appearance;
+	//for displaying file on e-hastakshar page(endpoint with file name)
 	private String filePath;
+	private String serverFile;
 
 }
