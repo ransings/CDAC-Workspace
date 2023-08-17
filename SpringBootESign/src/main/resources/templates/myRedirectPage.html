@@ -1,0 +1,18 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Form Submission</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+
+    <form id="formid" name="myform" th:object="${myRequestXmlForm}" method="POST" action="https://esign-rel:11443/esign/authRequest">
+
+       <input th:field="*{eSignRequest}" type="hidden" name="txnref" id="eSignRequest" />
+
+<button type="Submit" >Submit</button>
+
+    </form>
+</body>
+
+</html>

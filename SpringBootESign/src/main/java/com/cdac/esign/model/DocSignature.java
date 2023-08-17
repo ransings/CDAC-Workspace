@@ -1,0 +1,24 @@
+package com.cdac.esign.model;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlValue;
+
+import lombok.Data;
+
+@XmlAccessorType(XmlAccessType.FIELD)
+@Data
+public class DocSignature {
+	@XmlAttribute(name = "id")
+	private String id;
+	@XmlAttribute(name = "error")
+	private String error;
+	@XmlAttribute(name = "sigHashAlgorithm")
+	private String sigHashAlgorithm;
+	
+	@XmlValue
+	private String dsc;
+		
+
+}
